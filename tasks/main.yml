@@ -1,7 +1,7 @@
 ---
 # Include variables and define needed variables.
 - name: Include OS-specific variables.
-  include_vars: "{{ ansible_facts.os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_facts.os_family }}.yml"
 
 - name: Include overrides specific to Fedora.
   ansible.builtin.include_vars: Fedora.yml
@@ -10,14 +10,16 @@
     - ansible_facts.distribution == "Fedora"
 
 # Setup/install tasks.
-- include_tasks: setup-RedHat.yml
+- name: Prepare RedHat host
+  ansible.builtin.include_tasks: setup-RedHat.yml
   when: ansible_facts.os_family == 'RedHat'
 
-- include_tasks: setup-Debian.yml
+- name: Prepare Debian host
+  ansible.builtin.include_tasks: setup-Debian.yml
   when: ansible_facts.os_family == 'Debian'
 
 - name: Ensure directories to export exist
-  file:  # noqa 208
+  ansible.builtin.file:  # noqa risky-file-permissions
     path: "{{ item }}"
     state: directory
   with_items: "{{ nfs_exports | map('split') | map('first') | unique }}"
@@ -32,5 +34,8 @@
   notify: Reload nfs
 
 - name: Ensure nfs is running.
-  service: "name={{ nfs_server_daemon }} state=started enabled=yes"
+  ansible.builtin.service:
+    name: "{{ nfs_server_daemon }}"
+    state: "started"
+    enabled: true
   when: nfs_exports|length > 0
